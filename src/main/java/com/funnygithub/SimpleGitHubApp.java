@@ -1,6 +1,9 @@
 package com.funnygithub;
 
+import com.funnygithub.ml.PatternGenerator;
+import com.funnygithub.ml.TrainingDataGenerator;
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -62,9 +65,10 @@ public class SimpleGitHubApp extends JFrame {
         setupLayout();
         setupEventHandlers();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setTitle("Simple GitHub Contribution Graph Generator");
-        setSize(1200, 800);
+        setTitle("🤖 GitHub Contribution Graph Generator with ML Features");
+        setSize(1400, 900);
         setLocationRelativeTo(null);
+        setMinimumSize(new Dimension(1200, 700));
         setVisible(true);
     }
     
@@ -102,86 +106,180 @@ public class SimpleGitHubApp extends JFrame {
             }
         }
         
-        // Input components
+        // Input components with modern styling
         yearInput = new JTextField("2024", 8);
-        textInput = new JTextField("HELLO", 20);
+        yearInput.setFont(new Font("Arial", Font.PLAIN, 11));
+        yearInput.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
+            BorderFactory.createEmptyBorder(4, 8, 4, 8)
+        ));
+        
+        textInput = new JTextField("PASINDU SAMPATH", 20);
+        textInput.setFont(new Font("Arial", Font.PLAIN, 11));
+        textInput.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
+            BorderFactory.createEmptyBorder(4, 8, 4, 8)
+        ));
+        
         outputArea = new JTextArea(20, 50);
-        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        outputArea.setFont(new Font("Consolas", Font.PLAIN, 11));
         outputArea.setEditable(false);
         
-        // Intensity slider
+        // Intensity slider with modern styling
         intensitySlider = new JSlider(0, 6, 1);
         intensitySlider.setMajorTickSpacing(1);
         intensitySlider.setPaintTicks(true);
         intensitySlider.setPaintLabels(true);
         intensitySlider.setSnapToTicks(true);
+        intensitySlider.setPreferredSize(new Dimension(150, 40));
         intensityLabel = new JLabel("Intensity: 1");
+        intensityLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        intensityLabel.setForeground(new Color(75, 85, 99));
     }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
         
-        // Top panel for inputs
-        JPanel topPanel = new JPanel(new FlowLayout());
-        topPanel.add(new JLabel("Year:"));
-        topPanel.add(yearInput);
-        topPanel.add(new JLabel("Text:"));
-        topPanel.add(textInput);
-        topPanel.add(intensityLabel);
-        topPanel.add(intensitySlider);
+        // Top panel with organized sections
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        topPanel.setBackground(new Color(248, 249, 250));
         
-        JButton generateButton = new JButton("Generate Commits");
-        generateButton.setBackground(new Color(34, 197, 94));
-        generateButton.setForeground(Color.WHITE);
+        // Input section
+        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        inputPanel.setBackground(new Color(248, 249, 250));
+        
+        JLabel yearLabel = createStyledLabel("Year:");
+        inputPanel.add(yearLabel);
+        inputPanel.add(yearInput);
+        
+        JLabel textLabel = createStyledLabel("Text:");
+        inputPanel.add(textLabel);
+        inputPanel.add(textInput);
+        
+        inputPanel.add(createSpacer(20));
+        inputPanel.add(intensityLabel);
+        inputPanel.add(intensitySlider);
+        
+        topPanel.add(inputPanel, BorderLayout.NORTH);
+        
+        // Button sections
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.setBackground(new Color(248, 249, 250));
+        
+        // ML Features section
+        JPanel mlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        mlPanel.setBackground(new Color(248, 249, 250));
+        mlPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(new Color(34, 139, 34), 2), 
+            "🤖 ML Features", 
+            0, 0, 
+            new Font("Arial", Font.BOLD, 12), 
+            new Color(34, 139, 34)
+        ));
+        
+        JButton mlGenerateButton = createStyledButton("ML Generate", new Color(34, 139, 34), "AI-powered pattern creation");
+        mlGenerateButton.addActionListener(e -> mlGeneratePattern());
+        mlPanel.add(mlGenerateButton);
+        
+        JButton optimizeButton = createStyledButton("Optimize Pattern", new Color(139, 69, 19), "Fine-tune with sliders");
+        optimizeButton.addActionListener(e -> optimizePattern());
+        mlPanel.add(optimizeButton);
+        
+        // Core Features section
+        JPanel corePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        corePanel.setBackground(new Color(248, 249, 250));
+        corePanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(new Color(59, 130, 246), 2), 
+            "⚡ Core Features", 
+            0, 0, 
+            new Font("Arial", Font.BOLD, 12), 
+            new Color(59, 130, 246)
+        ));
+        
+        JButton generateButton = createStyledButton("Generate Commits", new Color(34, 197, 94), "Create batch file");
         generateButton.addActionListener(e -> generateCommits());
-        topPanel.add(generateButton);
+        corePanel.add(generateButton);
         
-        JButton createCommitsButton = new JButton("Create Real Commits");
-        createCommitsButton.setBackground(new Color(59, 130, 246));
-        createCommitsButton.setForeground(Color.WHITE);
+        JButton createCommitsButton = createStyledButton("Create Real Commits", new Color(59, 130, 246), "Direct git commits");
         createCommitsButton.addActionListener(e -> createRealCommits());
-        topPanel.add(createCommitsButton);
+        corePanel.add(createCommitsButton);
         
-        JButton clearButton = new JButton("Clear Grid");
+        JButton clearButton = createStyledButton("Clear Grid", new Color(156, 163, 175), "Reset pattern");
         clearButton.addActionListener(e -> clearGrid());
-        topPanel.add(clearButton);
+        corePanel.add(clearButton);
         
-        JButton saveButton = new JButton("Save Pattern");
-        saveButton.setBackground(new Color(168, 85, 247));
-        saveButton.setForeground(Color.WHITE);
+        // Pattern Management section
+        JPanel patternPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        patternPanel.setBackground(new Color(248, 249, 250));
+        patternPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(new Color(168, 85, 247), 2), 
+            "💾 Pattern Management", 
+            0, 0, 
+            new Font("Arial", Font.BOLD, 12), 
+            new Color(168, 85, 247)
+        ));
+        
+        JButton saveButton = createStyledButton("Save Pattern", new Color(168, 85, 247), "Save current design");
         saveButton.addActionListener(e -> savePattern());
-        topPanel.add(saveButton);
+        patternPanel.add(saveButton);
         
-        JButton loadButton = new JButton("Load Pattern");
-        loadButton.setBackground(new Color(245, 158, 11));
-        loadButton.setForeground(Color.WHITE);
+        JButton loadButton = createStyledButton("Load Pattern", new Color(245, 158, 11), "Load saved design");
         loadButton.addActionListener(e -> loadPattern());
-        topPanel.add(loadButton);
+        patternPanel.add(loadButton);
+        
+        // Organize button sections
+        JPanel leftButtons = new JPanel(new BorderLayout());
+        leftButtons.add(mlPanel, BorderLayout.NORTH);
+        leftButtons.add(corePanel, BorderLayout.CENTER);
+        
+        JPanel rightButtons = new JPanel(new BorderLayout());
+        rightButtons.add(patternPanel, BorderLayout.NORTH);
+        
+        buttonPanel.add(leftButtons, BorderLayout.WEST);
+        buttonPanel.add(rightButtons, BorderLayout.EAST);
+        
+        topPanel.add(buttonPanel, BorderLayout.SOUTH);
         
         add(topPanel, BorderLayout.NORTH);
         
         // Center panel for grid
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(new JLabel("Design your pattern by clicking on the grid:", SwingConstants.CENTER), BorderLayout.NORTH);
+        centerPanel.setBackground(new Color(255, 255, 255));
+        
+        JLabel gridTitle = createStyledLabel("🎨 Design your pattern by clicking on the grid (cycle through intensity levels 0-6)");
+        gridTitle.setHorizontalAlignment(SwingConstants.CENTER);
+        gridTitle.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+        centerPanel.add(gridTitle, BorderLayout.NORTH);
         
         JPanel gridPanel = new JPanel(new GridLayout(GRID_ROWS, GRID_COLS, 1, 1));
+        gridPanel.setBorder(BorderFactory.createLineBorder(new Color(209, 213, 219), 2));
+        gridPanel.setBackground(new Color(255, 255, 255));
+        
         for (int row = 0; row < GRID_ROWS; row++) {
             for (int col = 0; col < GRID_COLS; col++) {
+                gridCells[row][col].setBorder(BorderFactory.createLineBorder(new Color(229, 231, 235), 1));
                 gridPanel.add(gridCells[row][col]);
             }
         }
         
         JScrollPane gridScrollPane = new JScrollPane(gridPanel);
-        gridScrollPane.setPreferredSize(new Dimension(800, 200));
+        gridScrollPane.setPreferredSize(new Dimension(900, 220));
+        gridScrollPane.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        gridScrollPane.getViewport().setBackground(new Color(255, 255, 255));
         centerPanel.add(gridScrollPane, BorderLayout.CENTER);
         
         // Add day labels
         JPanel leftPanel = new JPanel(new GridLayout(7, 1));
+        leftPanel.setBackground(new Color(248, 249, 250));
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 5));
+        
         String[] dayLabels = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
         for (String day : dayLabels) {
             JLabel dayLabel = new JLabel(day, SwingConstants.CENTER);
-            dayLabel.setFont(new Font("Arial", Font.BOLD, 12));
-            dayLabel.setPreferredSize(new Dimension(40, CELL_SIZE));
+            dayLabel.setFont(new Font("Arial", Font.BOLD, 11));
+            dayLabel.setPreferredSize(new Dimension(45, CELL_SIZE));
+            dayLabel.setForeground(new Color(75, 85, 99));
             leftPanel.add(dayLabel);
         }
         centerPanel.add(leftPanel, BorderLayout.WEST);
@@ -190,8 +288,20 @@ public class SimpleGitHubApp extends JFrame {
         
         // Bottom panel for output
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.add(new JLabel("Generated Commits:", SwingConstants.CENTER), BorderLayout.NORTH);
+        bottomPanel.setBackground(new Color(248, 249, 250));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JLabel outputTitle = createStyledLabel("📄 Generated Commits & Git Commands");
+        outputTitle.setHorizontalAlignment(SwingConstants.CENTER);
+        bottomPanel.add(outputTitle, BorderLayout.NORTH);
+        
+        outputArea.setBorder(BorderFactory.createLineBorder(new Color(209, 213, 219), 1));
+        outputArea.setBackground(new Color(255, 255, 255));
+        outputArea.setFont(new Font("Consolas", Font.PLAIN, 11));
+        
         JScrollPane outputScrollPane = new JScrollPane(outputArea);
+        outputScrollPane.setPreferredSize(new Dimension(800, 200));
+        outputScrollPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
         bottomPanel.add(outputScrollPane, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
     }
@@ -202,6 +312,53 @@ public class SimpleGitHubApp extends JFrame {
             int intensity = intensitySlider.getValue();
             intensityLabel.setText("Intensity: " + intensity);
         });
+    }
+    
+    /**
+     * Create a styled label with modern appearance
+     */
+    private JLabel createStyledLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Arial", Font.PLAIN, 11));
+        label.setForeground(new Color(75, 85, 99));
+        return label;
+    }
+    
+    /**
+     * Create a styled button with modern appearance and tooltip
+     */
+    private JButton createStyledButton(String text, Color backgroundColor, String tooltip) {
+        JButton button = new JButton(text);
+        button.setBackground(backgroundColor);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Arial", Font.BOLD, 11));
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setToolTipText(tooltip);
+        button.setPreferredSize(new Dimension(120, 32));
+        
+        // Add hover effects
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(backgroundColor.darker());
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(backgroundColor);
+            }
+        });
+        
+        return button;
+    }
+    
+    /**
+     * Create a spacer component for layout
+     */
+    private Component createSpacer(int width) {
+        return Box.createHorizontalStrut(width);
     }
     
     private Color getIntensityColor(int intensity) {
@@ -702,6 +859,165 @@ public class SimpleGitHubApp extends JFrame {
                 }
             }
         }
+    }
+    
+    /**
+     * Generate pattern using Machine Learning
+     */
+    private void mlGeneratePattern() {
+        String text = textInput.getText().trim();
+        String yearText = yearInput.getText().trim();
+        
+        if (text.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter text to generate pattern!", "Input Required", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        final int year = Integer.parseInt(yearText);
+        
+        final String finalText = text;
+        
+        // Show progress dialog
+        JDialog progressDialog = new JDialog(this, "Generating ML Pattern", true);
+        progressDialog.setSize(300, 100);
+        progressDialog.setLocationRelativeTo(this);
+        
+        JPanel progressPanel = new JPanel(new BorderLayout());
+        JLabel progressLabel = new JLabel("Generating pattern with ML...", JLabel.CENTER);
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        
+        progressPanel.add(progressLabel, BorderLayout.CENTER);
+        progressPanel.add(progressBar, BorderLayout.SOUTH);
+        progressDialog.add(progressPanel);
+        
+        // Generate pattern in background thread
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(() -> {
+            try {
+                SwingUtilities.invokeLater(() -> progressDialog.setVisible(true));
+                
+                // Generate pattern using ML
+                int[][] mlPattern = PatternGenerator.generatePattern(finalText, year);
+                
+                SwingUtilities.invokeLater(() -> {
+                    // Apply the generated pattern
+                    for (int row = 0; row < GRID_ROWS; row++) {
+                        for (int col = 0; col < GRID_COLS; col++) {
+                            patternData[row][col] = mlPattern[row][col];
+                            updateCellAppearance(row, col);
+                        }
+                    }
+                    
+                    progressDialog.dispose();
+                    
+                    JOptionPane.showMessageDialog(this, 
+                        "ML Pattern generated successfully!\n" +
+                        "Text: " + finalText + "\n" +
+                        "Year: " + year + "\n" +
+                        "Active cells: " + getActiveCells(), 
+                        "ML Generation Complete", JOptionPane.INFORMATION_MESSAGE);
+                });
+                
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    progressDialog.dispose();
+                    JOptionPane.showMessageDialog(this, "Error generating ML pattern: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+            return null;
+        });
+        
+        executor.shutdown();
+    }
+    
+    /**
+     * Optimize current pattern using ML techniques
+     */
+    private void optimizePattern() {
+        String text = textInput.getText().trim();
+        String yearText = yearInput.getText().trim();
+        
+        if (text.isEmpty()) {
+            text = "OPTIMIZED"; // Default text for optimization
+        }
+        
+        final int year = Integer.parseInt(yearText);
+        
+        final String finalText = text;
+        
+        // Show optimization dialog
+        JDialog optimizationDialog = new JDialog(this, "Pattern Optimization", true);
+        optimizationDialog.setSize(400, 300);
+        optimizationDialog.setLocationRelativeTo(this);
+        
+        JPanel optimizationPanel = new JPanel(new BorderLayout());
+        
+        // Optimization parameters
+        JPanel paramsPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+        
+        JSlider densitySlider = new JSlider(0, 100, 50);
+        densitySlider.setMajorTickSpacing(25);
+        densitySlider.setPaintTicks(true);
+        densitySlider.setPaintLabels(true);
+        
+        JSlider symmetrySlider = new JSlider(0, 100, 50);
+        symmetrySlider.setMajorTickSpacing(25);
+        symmetrySlider.setPaintTicks(true);
+        symmetrySlider.setPaintLabels(true);
+        
+        JSlider continuitySlider = new JSlider(0, 100, 50);
+        continuitySlider.setMajorTickSpacing(25);
+        continuitySlider.setPaintTicks(true);
+        continuitySlider.setPaintLabels(true);
+        
+        paramsPanel.add(new JLabel("Density:"));
+        paramsPanel.add(densitySlider);
+        paramsPanel.add(new JLabel("Symmetry:"));
+        paramsPanel.add(symmetrySlider);
+        paramsPanel.add(new JLabel("Continuity:"));
+        paramsPanel.add(continuitySlider);
+        
+        JButton optimizeButton = new JButton("Optimize Pattern");
+        optimizeButton.addActionListener(e -> {
+            double density = densitySlider.getValue() / 100.0;
+            double symmetry = symmetrySlider.getValue() / 100.0;
+            double continuity = continuitySlider.getValue() / 100.0;
+            
+            // Generate optimized pattern
+            int[][] optimizedPattern = PatternGenerator.generateCustomPattern(finalText, year, density, symmetry, continuity);
+            
+            // Apply the optimized pattern
+            for (int row = 0; row < GRID_ROWS; row++) {
+                for (int col = 0; col < GRID_COLS; col++) {
+                    patternData[row][col] = optimizedPattern[row][col];
+                    updateCellAppearance(row, col);
+                }
+            }
+            
+            optimizationDialog.dispose();
+            
+            JOptionPane.showMessageDialog(this, 
+                "Pattern optimized successfully!\n" +
+                "Density: " + String.format("%.1f", density) + "\n" +
+                "Symmetry: " + String.format("%.1f", symmetry) + "\n" +
+                "Continuity: " + String.format("%.1f", continuity), 
+                "Optimization Complete", JOptionPane.INFORMATION_MESSAGE);
+        });
+        
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(e -> optimizationDialog.dispose());
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(optimizeButton);
+        buttonPanel.add(cancelButton);
+        
+        optimizationPanel.add(new JLabel("Adjust optimization parameters:", JLabel.CENTER), BorderLayout.NORTH);
+        optimizationPanel.add(paramsPanel, BorderLayout.CENTER);
+        optimizationPanel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        optimizationDialog.add(optimizationPanel);
+        optimizationDialog.setVisible(true);
     }
     
     public static void main(String[] args) {
