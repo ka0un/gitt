@@ -3,6 +3,7 @@
 A simple GUI application to design patterns and generate GitHub contribution graphs.
 
 ![GitHub Contribution Graph Generator](image.png)
+![GitHub Contribution Graph ](github.png)
 
 ## Features
 

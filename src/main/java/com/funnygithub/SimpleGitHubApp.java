@@ -228,6 +228,25 @@ public class SimpleGitHubApp extends JFrame {
         loadButton.addActionListener(e -> loadPattern());
         patternPanel.add(loadButton);
         
+        // Commit Management section
+        JPanel commitPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        commitPanel.setBackground(new Color(248, 249, 250));
+        commitPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(new Color(220, 38, 127), 2), 
+            "🗑️ Commit Management", 
+            0, 0, 
+            new Font("Arial", Font.BOLD, 12), 
+            new Color(220, 38, 127)
+        ));
+        
+        JButton viewCommitsButton = createStyledButton("View Commits", new Color(220, 38, 127), "View commits by year");
+        viewCommitsButton.addActionListener(e -> viewCommitsByYear());
+        commitPanel.add(viewCommitsButton);
+        
+        JButton deleteCommitsButton = createStyledButton("Delete Commits", new Color(185, 28, 28), "Delete commits by year");
+        deleteCommitsButton.addActionListener(e -> deleteCommitsByYear());
+        commitPanel.add(deleteCommitsButton);
+        
         // Organize button sections
         JPanel leftButtons = new JPanel(new BorderLayout());
         leftButtons.add(mlPanel, BorderLayout.NORTH);
@@ -235,6 +254,7 @@ public class SimpleGitHubApp extends JFrame {
         
         JPanel rightButtons = new JPanel(new BorderLayout());
         rightButtons.add(patternPanel, BorderLayout.NORTH);
+        rightButtons.add(commitPanel, BorderLayout.CENTER);
         
         buttonPanel.add(leftButtons, BorderLayout.WEST);
         buttonPanel.add(rightButtons, BorderLayout.EAST);
@@ -1018,6 +1038,305 @@ public class SimpleGitHubApp extends JFrame {
         
         optimizationDialog.add(optimizationPanel);
         optimizationDialog.setVisible(true);
+    }
+    
+    /**
+     * View commits by year
+     */
+    private void viewCommitsByYear() {
+        // Show year selection dialog
+        String yearText = JOptionPane.showInputDialog(this, 
+            "Enter year to view commits:", "View Commits by Year", JOptionPane.QUESTION_MESSAGE);
+        
+        if (yearText == null || yearText.trim().isEmpty()) {
+            return;
+        }
+        
+        int year;
+        try {
+            year = Integer.parseInt(yearText.trim());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid year!", "Invalid Year", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Show progress dialog
+        JDialog progressDialog = new JDialog(this, "Loading Commits", true);
+        progressDialog.setSize(400, 150);
+        progressDialog.setLocationRelativeTo(this);
+        
+        JPanel progressPanel = new JPanel(new BorderLayout());
+        JLabel progressLabel = new JLabel("Loading commits for year " + year + "...", JLabel.CENTER);
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        
+        progressPanel.add(progressLabel, BorderLayout.CENTER);
+        progressPanel.add(progressBar, BorderLayout.SOUTH);
+        progressDialog.add(progressPanel);
+        
+        // Load commits in background thread
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(() -> {
+            try {
+                SwingUtilities.invokeLater(() -> progressDialog.setVisible(true));
+                
+                // Get commits for the year
+                String commits = getCommitsByYear(year);
+                
+                SwingUtilities.invokeLater(() -> {
+                    progressDialog.dispose();
+                    showCommitsDialog(year, commits);
+                });
+                
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    progressDialog.dispose();
+                    JOptionPane.showMessageDialog(this, "Error loading commits: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+            return null;
+        });
+        
+        executor.shutdown();
+    }
+    
+    /**
+     * Delete commits by year
+     */
+    private void deleteCommitsByYear() {
+        // Show year selection dialog
+        String yearText = JOptionPane.showInputDialog(this, 
+            "Enter year to delete commits:", "Delete Commits by Year", JOptionPane.QUESTION_MESSAGE);
+        
+        if (yearText == null || yearText.trim().isEmpty()) {
+            return;
+        }
+        
+        int year;
+        try {
+            year = Integer.parseInt(yearText.trim());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid year!", "Invalid Year", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Confirm deletion
+        int result = JOptionPane.showConfirmDialog(this, 
+            "Are you sure you want to delete ALL commits for year " + year + "?\n\n" +
+            "This action cannot be undone!", 
+            "Confirm Deletion", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.WARNING_MESSAGE);
+        
+        if (result != JOptionPane.YES_OPTION) {
+            return;
+        }
+        
+        // Show progress dialog
+        JDialog progressDialog = new JDialog(this, "Deleting Commits", true);
+        progressDialog.setSize(400, 150);
+        progressDialog.setLocationRelativeTo(this);
+        
+        JPanel progressPanel = new JPanel(new BorderLayout());
+        JLabel progressLabel = new JLabel("Deleting commits for year " + year + "...", JLabel.CENTER);
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        
+        progressPanel.add(progressLabel, BorderLayout.CENTER);
+        progressPanel.add(progressBar, BorderLayout.SOUTH);
+        progressDialog.add(progressPanel);
+        
+        // Delete commits in background thread
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(() -> {
+            try {
+                SwingUtilities.invokeLater(() -> progressDialog.setVisible(true));
+                
+                // Delete commits for the year
+                int deletedCount = deleteCommitsByYear(year);
+                
+                SwingUtilities.invokeLater(() -> {
+                    progressDialog.dispose();
+                    JOptionPane.showMessageDialog(this, 
+                        "Successfully deleted " + deletedCount + " commits for year " + year + "!", 
+                        "Deletion Complete", JOptionPane.INFORMATION_MESSAGE);
+                });
+                
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    progressDialog.dispose();
+                    JOptionPane.showMessageDialog(this, "Error deleting commits: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+            return null;
+        });
+        
+        executor.shutdown();
+    }
+    
+    /**
+     * Get commits for a specific year
+     */
+    private String getCommitsByYear(int year) throws Exception {
+        StringBuilder output = new StringBuilder();
+        output.append("Commits for year ").append(year).append(":\n");
+        output.append("=".repeat(50)).append("\n\n");
+        
+        // Run git log command
+        ProcessBuilder gitLog = new ProcessBuilder("git", "log", "--oneline", "--since=" + year + "-01-01", "--until=" + year + "-12-31");
+        gitLog.directory(Paths.get(".").toFile());
+        Process process = gitLog.start();
+        
+        // Read output
+        try (Scanner scanner = new Scanner(process.getInputStream())) {
+            int commitCount = 0;
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (!line.trim().isEmpty()) {
+                    output.append(line).append("\n");
+                    commitCount++;
+                }
+            }
+            
+            output.append("\nTotal commits found: ").append(commitCount).append("\n");
+        }
+        
+        process.waitFor();
+        return output.toString();
+    }
+    
+    /**
+     * Delete commits for a specific year
+     */
+    private int deleteCommitsByYear(int year) throws Exception {
+        // Get all commits for the year first
+        String commits = getCommitsByYear(year);
+        String[] lines = commits.split("\n");
+        int commitCount = 0;
+        
+        // Count commits (skip header lines)
+        for (String line : lines) {
+            if (line.trim().startsWith("commit ") || line.trim().matches("^[a-f0-9]{7,}.*")) {
+                commitCount++;
+            }
+        }
+        
+        if (commitCount == 0) {
+            return 0;
+        }
+        
+        // Create a new branch without the commits
+        String backupBranch = "backup-before-delete-" + System.currentTimeMillis();
+        
+        // Create backup branch
+        ProcessBuilder createBackup = new ProcessBuilder("git", "branch", backupBranch);
+        createBackup.directory(Paths.get(".").toFile());
+        Process backupProcess = createBackup.start();
+        backupProcess.waitFor();
+        
+        try {
+            // Reset to before the year
+            ProcessBuilder resetCommand = new ProcessBuilder("git", "reset", "--hard", "HEAD~" + commitCount);
+            resetCommand.directory(Paths.get(".").toFile());
+            Process resetProcess = resetCommand.start();
+            resetProcess.waitFor();
+            
+            return commitCount;
+            
+        } catch (Exception e) {
+            // Restore from backup if something goes wrong
+            ProcessBuilder restoreCommand = new ProcessBuilder("git", "reset", "--hard", backupBranch);
+            restoreCommand.directory(Paths.get(".").toFile());
+            Process restoreProcess = restoreCommand.start();
+            restoreProcess.waitFor();
+            throw e;
+        }
+    }
+    
+    /**
+     * Show commits in a dialog
+     */
+    private void showCommitsDialog(int year, String commits) {
+        JDialog commitsDialog = new JDialog(this, "Commits for Year " + year, true);
+        commitsDialog.setSize(800, 600);
+        commitsDialog.setLocationRelativeTo(this);
+        
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        
+        JTextArea commitsArea = new JTextArea(commits);
+        commitsArea.setFont(new Font("Consolas", Font.PLAIN, 11));
+        commitsArea.setEditable(false);
+        commitsArea.setBackground(new Color(248, 249, 250));
+        
+        JScrollPane scrollPane = new JScrollPane(commitsArea);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(209, 213, 219), 1));
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton closeButton = createStyledButton("Close", new Color(156, 163, 175), "Close dialog");
+        closeButton.addActionListener(e -> commitsDialog.dispose());
+        buttonPanel.add(closeButton);
+        
+        JButton deleteButton = createStyledButton("Delete These Commits", new Color(185, 28, 28), "Delete all shown commits");
+        deleteButton.addActionListener(e -> {
+            commitsDialog.dispose();
+            // Show confirmation dialog
+            int result = JOptionPane.showConfirmDialog(this, 
+                "Are you sure you want to delete ALL commits for year " + year + "?\n\n" +
+                "This action cannot be undone!", 
+                "Confirm Deletion", 
+                JOptionPane.YES_NO_OPTION, 
+                JOptionPane.WARNING_MESSAGE);
+            
+            if (result == JOptionPane.YES_OPTION) {
+                // Show progress dialog
+                JDialog progressDialog = new JDialog(this, "Deleting Commits", true);
+                progressDialog.setSize(400, 150);
+                progressDialog.setLocationRelativeTo(this);
+                
+                JPanel progressPanel = new JPanel(new BorderLayout());
+                JLabel progressLabel = new JLabel("Deleting commits for year " + year + "...", JLabel.CENTER);
+                JProgressBar progressBar = new JProgressBar();
+                progressBar.setIndeterminate(true);
+                
+                progressPanel.add(progressLabel, BorderLayout.CENTER);
+                progressPanel.add(progressBar, BorderLayout.SOUTH);
+                progressDialog.add(progressPanel);
+                
+                // Delete commits in background thread
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(() -> {
+                    try {
+                        SwingUtilities.invokeLater(() -> progressDialog.setVisible(true));
+                        
+                        // Delete commits for the year
+                        int deletedCount = deleteCommitsByYear(year);
+                        
+                        SwingUtilities.invokeLater(() -> {
+                            progressDialog.dispose();
+                            JOptionPane.showMessageDialog(this, 
+                                "Successfully deleted " + deletedCount + " commits for year " + year + "!", 
+                                "Deletion Complete", JOptionPane.INFORMATION_MESSAGE);
+                        });
+                        
+                    } catch (Exception ex) {
+                        SwingUtilities.invokeLater(() -> {
+                            progressDialog.dispose();
+                            JOptionPane.showMessageDialog(this, "Error deleting commits: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        });
+                    }
+                    return null;
+                });
+                
+                executor.shutdown();
+            }
+        });
+        buttonPanel.add(deleteButton);
+        
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        commitsDialog.add(mainPanel);
+        commitsDialog.setVisible(true);
     }
     
     public static void main(String[] args) {
