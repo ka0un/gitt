@@ -1,4 +1,4 @@
-package com.funnygithub.ml;
+package com.GitTimeTraveler.ml;
 
 import java.io.*;
 import java.util.*;
