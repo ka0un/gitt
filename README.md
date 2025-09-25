@@ -16,7 +16,33 @@ git clone https://github.com/yourusername/Funny-Github.git
 cd Funny-Github
 ```
 
-### 2. Run the Application
+### 2. Set Up Git Authentication (IMPORTANT!)
+After forking, you need to configure git to push commits:
+
+#### Option A: Using Personal Access Token (Recommended)
+1. Go to GitHub → Settings → Developer settings → Personal access tokens
+2. Generate a new token with `repo` permissions
+3. Configure git with your token:
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+git remote set-url origin https://yourusername:YOUR_TOKEN@github.com/yourusername/Funny-Github.git
+```
+
+#### Option B: Using SSH (Alternative)
+1. Set up SSH keys on GitHub
+2. Change remote URL to SSH:
+```bash
+git remote set-url origin git@github.com:yourusername/Funny-Github.git
+```
+
+#### Option C: Test Locally First (Safest)
+You can test the application without pushing:
+- Use **"Generate Commits"** to create batch files
+- Review the generated commands before running
+- Only push when you're satisfied with the results
+
+### 3. Run the Application
 ```bash
 # On Windows:
 simple-github.bat
@@ -25,7 +51,26 @@ simple-github.bat
 java -cp src/main/java com.GitTimeTraveler.SimpleGitHubApp
 ```
 
-### 3. Start Creating! 🎯
+### 4. Verify Your Setup (Quick Test)
+Before creating your masterpiece, let's make sure everything works:
+
+```bash
+# Test git authentication:
+git status
+
+# Test pushing (creates a test commit):
+echo "Test commit" > test.txt
+git add test.txt
+git commit -m "Test commit for verification"
+git push origin main
+git rm test.txt
+git commit -m "Remove test file"
+git push origin main
+```
+
+If this works without errors, you're ready to create! 🎉
+
+### 5. Start Creating! 🎯
 
 ## 🛡️ Safety First - Use an Unused Year!
 
@@ -60,11 +105,18 @@ java -cp src/main/java com.GitTimeTraveler.SimpleGitHubApp
 - This creates a `git_commands.bat` file
 - **Review the file** before running it
 - Run `git_commands.bat` when you're ready
+- **Safe to test locally first** - commits won't be pushed automatically
 
 #### Option B: Create Real Commits (For Advanced Users)
 - Click **"Create Real Commits"**
 - Commits are created automatically with progress tracking
 - **Watch the magic happen** in real-time!
+- **Note**: This creates commits locally - you still need to push manually
+
+#### Option C: Local Testing Only (Safest)
+- Use either method above to create commits locally
+- Test with: `git log --oneline` to see your commits
+- Only push when you're satisfied: `git push origin main`
 
 ### Step 4: Save Your Masterpiece
 - Click **"Save Pattern"** to store your design
@@ -155,16 +207,40 @@ Funny-Github/
 
 ## 🚨 Troubleshooting
 
-### Common Issues:
+### Git Authentication Issues:
+- **"Permission denied" or "Authentication failed"**: 
+  - Set up Personal Access Token (see Step 2 above)
+  - Make sure your token has `repo` permissions
+  - Check your git configuration: `git config --list`
+
+- **"Repository not found"**:
+  - Verify you forked the repository correctly
+  - Check your remote URL: `git remote -v`
+  - Make sure you're using your username in the URL
+
+- **"Push failed"**:
+  - Try: `git push origin main` (or `master`)
+  - Check if you need to pull first: `git pull origin main`
+  - Verify your token is still valid
+
+### Application Issues:
 - **"Java not found"**: Install Java from [java.com](https://java.com)
 - **"Git not found"**: Install Git from [git-scm.com](https://git-scm.com)
-- **Pattern not showing**: Make sure you pushed to GitHub
+- **Pattern not showing**: Make sure you pushed to GitHub and waited a few minutes
 - **Commits too light**: Increase intensity by clicking cells multiple times
+
+### Testing Without Pushing:
+If you're having git issues, you can still test the app:
+1. Use **"Generate Commits"** to create batch files
+2. Review the generated `git_commands.bat` file
+3. Test locally with `git log --oneline` to see commits
+4. Only push when everything works locally
 
 ### Getting Help:
 - Check the **"View Commits"** feature to see what was created
 - Use **"Delete Commits"** to start over with a clean year
 - Try different years if one doesn't work as expected
+- Test with a simple pattern first (like "TEST")
 
 ## 🤝 Contributing
 
